@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Compiled output
+dist/
+
+# Local Environment Variables & Secrets
+.env
+.env.local
+config/google-service-account.json
+
+# Logs & debug output
+*.log
+*.txt
+npm-debug.log*
+
+# Local database, uploads and Excel sheets
+db.json
+uploads/
+data/*.xlsx
+
+# OS
+.DS_Store
