@@ -1,9 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 
-const uploadsDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// On Vercel only /tmp is writable, so uploads land there (ephemeral — Drive is primary storage)
+const uploadsDir = process.env.VERCEL
+  ? '/tmp/uploads'
+  : path.join(__dirname, '../../uploads');
+
+function ensureUploadsDir() {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
 }
 
 function saveBase64File(fileObj: any, prefix: string): string | null {
@@ -17,6 +23,7 @@ function saveBase64File(fileObj: any, prefix: string): string | null {
     const base64Data = rawData.includes(',') ? rawData.split(',')[1] : rawData;
     const buffer = Buffer.from(base64Data, 'base64');
     
+    ensureUploadsDir();
     const cleanName = (fileObj.name || 'document.png').replace(/[^a-zA-Z0-9_.-]/g, '_');
     const filename = `${Date.now()}_${prefix}_${cleanName}`;
     const filePath = path.join(uploadsDir, filename);

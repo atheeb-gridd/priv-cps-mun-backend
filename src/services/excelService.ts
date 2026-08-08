@@ -9,7 +9,9 @@ import EmailLog from '../models/EmailLog';
 import AdminLog from '../models/AdminLog';
 import OTPLog from '../models/OTPLog';
 
-const EXCEL_FILE_PATH = path.join(__dirname, '../../data/master_registration.xlsx');
+const EXCEL_FILE_PATH = process.env.VERCEL
+  ? '/tmp/data/master_registration.xlsx'
+  : path.join(__dirname, '../../data/master_registration.xlsx');
 
 // Core committees list for seat availability calculations (matches official capacity sheet)
 const COMMITTEES = [

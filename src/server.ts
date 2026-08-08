@@ -35,8 +35,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Static file serving (for signature images, uploads, etc.)
+// On Vercel the filesystem is read-only except /tmp, so runtime uploads land there
+const uploadsDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '../uploads');
 app.use(express.static(path.join(__dirname, '../public')));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(uploadsDir));
 
 // Serve React production build
 const buildPath = path.join(__dirname, '../../build');
@@ -72,8 +74,12 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ message: 'An unhandled server error occurred.' });
 });
 
-// Start Express Server
-app.listen(Number(PORT), () => {
-  console.log(`CPS PRIME MUN Server listening on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Start Express Server (skipped on Vercel, where the app is invoked as a serverless function)
+if (!process.env.VERCEL) {
+  app.listen(Number(PORT), () => {
+    console.log(`CPS PRIME MUN Server listening on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
+export default app;

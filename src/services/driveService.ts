@@ -15,18 +15,29 @@ function getDriveClient() {
   if (driveClient) return driveClient;
 
   try {
-    if (!fs.existsSync(CREDENTIALS_PATH)) {
-      console.error(`Google Drive Service Account config not found at: ${CREDENTIALS_PATH}`);
+    const scopes = [
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/drive',
+    ];
+
+    // Prefer credentials from env (required on Vercel, where the key file isn't deployed)
+    let auth;
+    if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+      auth = new google.auth.GoogleAuth({
+        credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+        scopes,
+      });
+    } else if (fs.existsSync(CREDENTIALS_PATH)) {
+      auth = new google.auth.GoogleAuth({
+        keyFile: CREDENTIALS_PATH,
+        scopes,
+      });
+    } else {
+      console.error(
+        `Google Drive credentials not found: set GOOGLE_SERVICE_ACCOUNT_JSON or provide ${CREDENTIALS_PATH}`
+      );
       return null;
     }
-
-    const auth = new google.auth.GoogleAuth({
-      keyFile: CREDENTIALS_PATH,
-      scopes: [
-        'https://www.googleapis.com/auth/drive.file',
-        'https://www.googleapis.com/auth/drive',
-      ],
-    });
 
     driveClient = google.drive({ version: 'v3', auth });
     return driveClient;
@@ -96,7 +107,9 @@ export async function uploadFileToDrive(
     console.warn(`⚠️ Google Drive upload failed (${driveErr?.message || driveErr}). Saving fallback to local storage.`);
     console.warn(`👉 IMPORTANT: Please ensure folder "1PHU91Vm_cXhpTWdBSYzOtGl__57yI2d6" is shared with Editor permission for: cps-prime-drive@cps-prime-mun-drive-api.iam.gserviceaccount.com`);
 
-    const uploadsDir = path.join(__dirname, '../../uploads');
+    const uploadsDir = process.env.VERCEL
+      ? '/tmp/uploads'
+      : path.join(__dirname, '../../uploads');
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
