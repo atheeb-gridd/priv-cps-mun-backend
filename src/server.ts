@@ -74,10 +74,14 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({ message: 'An unhandled server error occurred.' });
 });
 
-// Start Express Server (Vercel's Express runtime provides PORT and expects the app to listen)
-app.listen(Number(PORT), () => {
-  console.log(`CPS PRIME MUN Server listening on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Start Express Server only when NOT running on Vercel.
+// On Vercel, the serverless runtime injects requests directly into the exported app —
+// calling app.listen() would crash the function.
+if (!process.env.VERCEL) {
+  app.listen(Number(PORT), () => {
+    console.log(`CPS PRIME MUN Server listening on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
 export default app;
