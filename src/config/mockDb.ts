@@ -270,17 +270,48 @@ export class MockModelClass {
     const items = db[this.collectionName] || [];
     let index = items.findIndex((item: any) => matchQuery(item, query));
 
+    // Helper to apply MongoDB-style update operators to a document
+    const applyUpdate = (base: any, upd: any): any => {
+      const result = { ...base };
+      // Handle known update operators
+      if (upd.$set && typeof upd.$set === 'object') {
+        Object.assign(result, upd.$set);
+      }
+      if (upd.$unset && typeof upd.$unset === 'object') {
+        for (const key of Object.keys(upd.$unset)) {
+          delete result[key];
+        }
+      }
+      if (upd.$inc && typeof upd.$inc === 'object') {
+        for (const [key, val] of Object.entries(upd.$inc)) {
+          result[key] = (Number(result[key]) || 0) + Number(val);
+        }
+      }
+      // If there are no operator keys, treat the entire update as $set
+      const hasOperators = Object.keys(upd).some(k => k.startsWith('$'));
+      if (!hasOperators) {
+        Object.assign(result, upd);
+      }
+      result.updatedAt = new Date().toISOString();
+      return result;
+    };
+
     let doc: any;
     if (index !== -1) {
-      doc = { ...items[index], ...update };
+      doc = applyUpdate(items[index], update);
       items[index] = doc;
     } else if (options.upsert) {
-      doc = { ...query, ...update };
-      if (!doc._id) {
-        doc._id = 'mock_' + Math.random().toString(36).substring(2, 9);
+      // Strip query-level operators (e.g. $or) from the seed document
+      const cleanQuery: any = {};
+      for (const [k, v] of Object.entries(query)) {
+        if (!k.startsWith('$')) cleanQuery[k] = v;
       }
-      if (!doc.createdAt) doc.createdAt = new Date().toISOString();
-      doc.updatedAt = new Date().toISOString();
+      const base: any = {
+        ...cleanQuery,
+        _id: 'mock_' + Math.random().toString(36).substring(2, 9),
+        createdAt: new Date().toISOString(),
+      };
+      doc = applyUpdate(base, update);
       items.push(doc);
     } else {
       return null;
