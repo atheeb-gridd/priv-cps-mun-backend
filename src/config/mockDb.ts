@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 
-const DB_FILE = path.join(__dirname, '../../db.json');
+const DB_FILE = process.env.VERCEL
+  ? '/tmp/db.json'
+  : path.join(__dirname, '../../db.json');
 
 let cachedDb: Record<string, any[]> | null = null;
 
