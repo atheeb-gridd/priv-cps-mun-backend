@@ -13,7 +13,9 @@ const connectDB = async (): Promise<void> => {
       const fs = require('fs');
       const path = require('path');
       const bcrypt = require('bcryptjs');
-      const dbFile = path.join(__dirname, '../../db.json');
+      const dbFile = process.env.VERCEL
+        ? '/tmp/db.json'
+        : path.join(__dirname, '../../db.json');
       
       let db: any = { users: [], registrations: [], pendingusers: [], otps: [] };
       if (fs.existsSync(dbFile)) {
