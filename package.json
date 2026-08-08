@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Backend API for CPS PRIME MUN 5.0 registration and auth",
   "main": "dist/server.js",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
