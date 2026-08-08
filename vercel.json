@@ -1,17 +1,16 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
   "installCommand": "npm install",
   "functions": {
-    "dist/server.js": {
-      "maxDuration": 300
+    "api/index.js": {
+      "maxDuration": 60
     }
   },
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "dist/server.js"
+      "dest": "api/index.js"
     }
   ]
 }
