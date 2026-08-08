@@ -5,7 +5,6 @@
   "installCommand": "npm install",
   "functions": {
     "dist/server.js": {
-      "engine": "nodejs24.x",
       "maxDuration": 30
     }
   },
