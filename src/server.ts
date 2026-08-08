@@ -44,6 +44,19 @@ app.use('/uploads', express.static(uploadsDir));
 const buildPath = path.join(__dirname, '../../build');
 app.use(express.static(buildPath));
 
+// Middleware to ensure DB is connected before processing API requests (essential for Vercel serverless cold starts)
+app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await connectDB();
+    next();
+  } catch (dbErr: any) {
+    console.error('Database connection error on API request:', dbErr);
+    res.status(500).json({
+      message: dbErr.message || 'Database connection failure. Please check MONGODB_URI or Atlas network access.',
+    });
+  }
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/registration', registrationRoutes);
@@ -71,7 +84,7 @@ app.get('*', (req: Request, res: Response, next: NextFunction) => {
 // Global Error Handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Unhandled Server Error:', err);
-  res.status(500).json({ message: 'An unhandled server error occurred.' });
+  res.status(500).json({ message: err.message || 'An unhandled server error occurred.' });
 });
 
 // Start Express Server only when NOT running on Vercel.
