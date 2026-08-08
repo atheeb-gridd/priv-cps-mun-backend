@@ -138,9 +138,9 @@ export const register = async (req: Request, res: Response) => {
       message: 'Verification code sent to your email address.',
       email: email.toLowerCase(),
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
-    return res.status(500).json({ message: 'An internal server error occurred.' });
+    return res.status(500).json({ message: error?.message || 'An internal server error occurred.' });
   }
 };
 
@@ -292,9 +292,9 @@ export const verifyEmail = async (req: Request, res: Response) => {
         registrationCompleted: newUser.registrationCompleted,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Email verification error:', error);
-    return res.status(500).json({ message: 'An internal server error occurred.' });
+    return res.status(500).json({ message: error?.message || 'An internal server error occurred.' });
   }
 };
 
@@ -335,9 +335,9 @@ export const sendOtp = async (req: Request, res: Response) => {
     }
 
     return res.status(404).json({ message: 'No account found with this email address.' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Send OTP error:', error);
-    return res.status(500).json({ message: 'An internal server error occurred.' });
+    return res.status(500).json({ message: error?.message || 'An internal server error occurred.' });
   }
 };
 
@@ -454,9 +454,9 @@ export const login = async (req: Request, res: Response) => {
         paymentBypass: user.paymentBypass || false,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return res.status(500).json({ message: 'An internal server error occurred.' });
+    return res.status(500).json({ message: error?.message || 'An internal server error occurred.' });
   }
 };
 
@@ -489,9 +489,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
       message: 'Password reset verification code sent to your email.',
       email: email.toLowerCase(),
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Forgot password error:', error);
-    return res.status(500).json({ message: 'An internal server error occurred.' });
+    return res.status(500).json({ message: error?.message || 'An internal server error occurred.' });
   }
 };
 
@@ -538,9 +538,9 @@ export const resetPassword = async (req: Request, res: Response) => {
     await OTP.deleteOne({ _id: validOtp._id });
 
     return res.status(200).json({ message: 'Password updated successfully. You can now log in.' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Reset password error:', error);
-    return res.status(500).json({ message: 'An internal server error occurred.' });
+    return res.status(500).json({ message: error?.message || 'An internal server error occurred.' });
   }
 };
 
@@ -589,9 +589,9 @@ export const logout = async (req: AuthenticatedRequest, res: Response) => {
       }
     }
     return res.status(200).json({ message: 'Logout successful.' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Logout error:', error);
-    return res.status(500).json({ message: 'An internal server error occurred.' });
+    return res.status(500).json({ message: error?.message || 'An internal server error occurred.' });
   }
 };
 
@@ -627,9 +627,9 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     return res.status(200).json({ user });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get me error:', error);
-    return res.status(500).json({ message: 'An internal server error occurred.' });
+    return res.status(500).json({ message: error?.message || 'An internal server error occurred.' });
   }
 };
 
