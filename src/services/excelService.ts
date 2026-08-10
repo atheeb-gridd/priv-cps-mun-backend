@@ -13,6 +13,25 @@ const EXCEL_FILE_PATH = process.env.VERCEL
   ? '/tmp/data/master_registration.xlsx'
   : path.join(__dirname, '../../data/master_registration.xlsx');
 
+/**
+ * Helper to format a date to standard locale format in the configured timezone.
+ * Defaults to 'Asia/Kolkata' (IST) to ensure consistency across exports.
+ */
+const formatDateTime = (date: any): string => {
+  if (!date) return '-';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleString('en-IN', {
+      timeZone: process.env.TZ || 'Asia/Kolkata',
+      hour12: true
+    });
+  } catch (error) {
+    return '-';
+  }
+};
+
+
 // Core committees list for seat availability calculations (matches official capacity sheet)
 const COMMITTEES = [
   'UN Human Rights Council (UNHRC)',
@@ -216,7 +235,7 @@ export const generateMasterExcel = async (): Promise<string> => {
           parentEmail: reg.details?.parentEmail || 'N/A',
           emergencyContact: `${reg.details?.emergencyName || 'N/A'} (${reg.details?.emergencyNumber || 'N/A'})`,
           delegateType: 'Individual Delegate',
-          date: regDate ? new Date(regDate).toLocaleString() : 'N/A',
+          date: formatDateTime(regDate),
           amountPaid: reg.amountPaid || 0,
           paymentId: reg.paymentId || 'N/A',
           paymentStatus: reg.paymentStatus || reg.details?.paymentStatus || 'Pending',
@@ -270,7 +289,7 @@ export const generateMasterExcel = async (): Promise<string> => {
             parentEmail: del.parentEmail || 'N/A',
             emergencyContact: `${reg.details?.schoolTeacherName || del.emergencyName || 'N/A'} (${reg.details?.schoolTeacherMobile || del.emergencyNumber || 'N/A'})`,
             delegateType: `School Delegation (${reg.details?.schoolName || 'School'})`,
-            date: regDate ? new Date(regDate).toLocaleString() : 'N/A',
+            date: formatDateTime(regDate),
             amountPaid: (reg.amountPaid || 0) / (delegatesList.length || 1),
             paymentId: reg.paymentId || 'N/A',
             paymentStatus: reg.paymentStatus || reg.details?.paymentStatus || 'Pending',
@@ -596,7 +615,7 @@ export const generateMasterExcel = async (): Promise<string> => {
         reg.amountPaid || 0,
         'INR',
         pStatus,
-        regDate ? new Date(regDate).toLocaleString() : 'N/A',
+        formatDateTime(regDate),
         'None'
       ]);
     });
@@ -627,8 +646,8 @@ export const generateMasterExcel = async (): Promise<string> => {
         log.registrationId || matchedUser?.userId || '-',
         log.email,
         matchedUser?.fullName || 'N/A',
-        log.otpGeneratedTime ? new Date(log.otpGeneratedTime).toLocaleString() : '-',
-        log.otpVerifiedTime ? new Date(log.otpVerifiedTime).toLocaleString() : '-',
+        formatDateTime(log.otpGeneratedTime),
+        formatDateTime(log.otpVerifiedTime),
         log.verificationStatus || (matchedUser?.emailVerified ? 'Verified' : 'Pending'),
         log.expiredOtp ? 'Yes' : 'No',
         log.failedAttempts || 0
@@ -641,8 +660,8 @@ export const generateMasterExcel = async (): Promise<string> => {
           u.userId || '-',
           u.email,
           u.fullName || 'N/A',
-          u.createdAt ? new Date(u.createdAt).toLocaleString() : '-',
-          u.emailVerified ? (u.updatedAt ? new Date(u.updatedAt).toLocaleString() : 'Verified') : 'Pending',
+          formatDateTime(u.createdAt),
+          u.emailVerified ? (u.updatedAt ? formatDateTime(u.updatedAt) : 'Verified') : 'Pending',
           u.emailVerified ? 'Verified' : 'Pending Verification',
           'No',
           0
@@ -678,8 +697,8 @@ export const generateMasterExcel = async (): Promise<string> => {
         log.userId || '-',
         log.registrationId || '-',
         log.email,
-        log.loginTime ? new Date(log.loginTime).toLocaleString() : '-',
-        log.logoutTime ? new Date(log.logoutTime).toLocaleString() : '-',
+        formatDateTime(log.loginTime),
+        formatDateTime(log.logoutTime),
         log.sessionDuration || '-',
         log.browser || '-',
         log.device || '-',
@@ -710,7 +729,7 @@ export const generateMasterExcel = async (): Promise<string> => {
 
     activities.forEach((log: any) => {
       wsActivity.addRow([
-        log.timestamp ? new Date(log.timestamp).toLocaleString() : '-',
+        formatDateTime(log.timestamp),
         log.registrationId || '-',
         log.delegateName || '-',
         log.action,
@@ -826,7 +845,7 @@ export const generateMasterExcel = async (): Promise<string> => {
 
     emailLogs.forEach((log: any) => {
       wsEmailLog.addRow([
-        log.timestamp ? new Date(log.timestamp).toLocaleString() : '-',
+        formatDateTime(log.timestamp),
         log.emailType,
         log.recipient,
         log.deliveryStatus,
@@ -852,7 +871,7 @@ export const generateMasterExcel = async (): Promise<string> => {
 
     adminLogs.forEach((log: any) => {
       wsAdminLog.addRow([
-        log.timestamp ? new Date(log.timestamp).toLocaleString() : '-',
+        formatDateTime(log.timestamp),
         log.adminName,
         log.action,
         log.editedRecord || '-',
