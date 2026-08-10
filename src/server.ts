@@ -27,7 +27,7 @@ app.use(
 );
 app.use(
   cors({
-    origin: '*',
+    origin: true, // Reflect request origin to satisfy credentials requirement
     credentials: true,
   })
 );
