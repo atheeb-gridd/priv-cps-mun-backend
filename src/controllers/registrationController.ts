@@ -915,10 +915,16 @@ export const downloadAdminExcel = async (req: AuthenticatedRequest, res: Respons
     }
 
     // Force regeneration to make sure it is 100% fresh
-    const filePath = await generateMasterExcel();
+    let filePath: string;
+    try {
+      filePath = await generateMasterExcel();
+    } catch (genErr: any) {
+      console.error('Excel generation error:', genErr);
+      return res.status(500).json({ message: 'Excel generation failed: ' + (genErr.message || 'Unknown error') });
+    }
 
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'Master Excel sheet not generated yet.' });
+      return res.status(404).json({ message: 'Master Excel sheet not generated yet. The file was not found on disk.' });
     }
 
     // Record download action in logs
@@ -947,10 +953,17 @@ export const downloadAdminExcel = async (req: AuthenticatedRequest, res: Respons
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=master_registration.xlsx');
 
-    return res.download(filePath, 'master_registration.xlsx');
-  } catch (error) {
+    // Read file and send as buffer (more reliable on serverless than res.download)
+    try {
+      const fileBuffer = fs.readFileSync(filePath);
+      return res.send(fileBuffer);
+    } catch (readErr) {
+      console.error('Failed to read Excel file, falling back to res.download:', readErr);
+      return res.download(filePath, 'master_registration.xlsx');
+    }
+  } catch (error: any) {
     console.error('Download Excel error:', error);
-    return res.status(500).json({ message: 'Failed to download the master Excel sheet.' });
+    return res.status(500).json({ message: 'Failed to download the master Excel sheet: ' + (error.message || 'Unknown server error') });
   }
 };
 
