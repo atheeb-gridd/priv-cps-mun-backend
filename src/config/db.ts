@@ -65,7 +65,9 @@ const connectDB = async (): Promise<void> => {
     return cachedPromise;
   }
 
-  let connString = process.env.MONGODB_URI || '';
+  mongoose.set('bufferCommands', false);
+
+  let connString = (process.env.MONGODB_URI || '').trim().replace(/^["']|["']$/g, '');
   // Auto-fix unescaped '@' in password if present (e.g. CPS@22Chennai -> CPS%4022Chennai)
   if (connString.includes('mongodb+srv://') || connString.includes('mongodb://')) {
     const parts = connString.split('@');
@@ -81,9 +83,9 @@ const connectDB = async (): Promise<void> => {
   cachedPromise = mongoose
     .connect(connString, {
       dbName: process.env.DB_NAME || 'cpsprimemun',
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 4000,
+      socketTimeoutMS: 20000,
+      connectTimeoutMS: 4000,
     })
     .then(async (conn) => {
       console.log(`MongoDB Connected: ${conn.connection.host}`);
