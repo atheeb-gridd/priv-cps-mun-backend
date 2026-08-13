@@ -7,14 +7,6 @@ export interface TokenPayload {
   username?: string;
 }
 
-if (!process.env.JWT_ACCESS_SECRET || !process.env.JWT_REFRESH_SECRET) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('CRITICAL: JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be defined in environment variables for production.');
-  } else {
-    console.warn('⚠️ WARNING: Using fallback JWT secret keys. Set JWT_ACCESS_SECRET and JWT_REFRESH_SECRET in .env for production.');
-  }
-}
-
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'cps_access_fallback_secret_key_123';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'cps_refresh_fallback_secret_key_123';
 
