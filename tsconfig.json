@@ -5,7 +5,7 @@
     "lib": ["es6"],
     "allowJs": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./",
     "strict": true,
     "noImplicitAny": true,
     "esModuleInterop": true,
@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "api/**/*"]
 }
