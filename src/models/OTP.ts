@@ -38,10 +38,8 @@ const OTPSchema = new Schema<IOTP>(
 // TTL index to automatically delete documents after expiresAt has passed
 OTPSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<IOTP>('OTP', OTPSchema);
-const MockModel = createMockModel('OTP');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('OTP', MongooseModel);
 export default exportModel;
