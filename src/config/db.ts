@@ -9,14 +9,14 @@ let cachedPromise: Promise<void> | null = null;
 const connectDB = async (): Promise<void> => {
   if (isMockDB()) {
     console.log('⚡ Mock Database Mode Active. Using zero-dependency JSON file-based database (db.json)');
-    
+
     const fs = require('fs');
     const path = require('path');
     const bcrypt = require('bcryptjs');
     const dbFile = process.env.VERCEL
       ? '/tmp/db.json'
       : path.join(__dirname, '../../db.json');
-    
+
     let db: any = { users: [], registrations: [], pendingusers: [], otps: [] };
     if (fs.existsSync(dbFile)) {
       try {
@@ -25,7 +25,7 @@ const connectDB = async (): Promise<void> => {
         // ignore
       }
     }
-    
+
     if (!db.users) db.users = [];
     const adminExists = db.users.some((u: any) => u.email === 'admin.secretariat@cpsprimemun.org');
     if (!adminExists) {
@@ -91,7 +91,7 @@ const connectDB = async (): Promise<void> => {
   }
 
   console.log(`Connecting to MongoDB...`);
-  
+
   cachedPromise = mongoose
     .connect(connString, {
       dbName: process.env.DB_NAME || 'cpsprimemun',
