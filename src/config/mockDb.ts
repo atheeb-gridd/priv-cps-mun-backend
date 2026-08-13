@@ -427,9 +427,31 @@ export function isMockDB(): boolean {
 import mongoose from 'mongoose';
 
 export function createHybridModel(name: string, mongooseModel: any) {
-  if (isMockDB()) {
-    return createMockModel(name);
+  const mockModel = createMockModel(name);
+
+  function HybridConstructor(this: any, data: any) {
+    if (mongoose.connection.readyState === 1) {
+      return new mongooseModel(data);
+    }
+    return new (mockModel as any)(data);
   }
-  return mongooseModel;
+
+  const methods = [
+    'findOne', 'find', 'findById', 'findByIdAndDelete',
+    'findByIdAndUpdate', 'findOneAndDelete', 'deleteOne',
+    'deleteMany', 'updateMany', 'findOneAndUpdate', 'countDocuments'
+  ];
+
+  methods.forEach((method) => {
+    (HybridConstructor as any)[method] = function (...args: any[]) {
+      if (mongoose.connection.readyState === 1) {
+        return (mongooseModel as any)[method](...args);
+      }
+      console.warn(`⚡ [HybridModel:${name}] MongoDB connection not active (readyState=${mongoose.connection.readyState}). Serving via resilient local storage for ${method}.`);
+      return (mockModel as any)[method](...args);
+    };
+  });
+
+  return HybridConstructor as any;
 }
 
