@@ -165,14 +165,35 @@ export const generateMasterExcel = async (): Promise<string> => {
       fs.mkdirSync(dir, { recursive: true });
     }
 
-    // Query databases
-    const allUsers = await User.find({});
-    const allRegistrations = await Registration.find({});
-    const logins = await LoginLog.find({});
-    const activities = await ActivityLog.find({});
-    const emailLogs = await EmailLog.find({});
-    const adminLogs = await AdminLog.find({});
-    const otpLogs = await OTPLog.find({});
+    // Query databases in parallel for maximum speed
+    let allUsers: any[] = [];
+    let allRegistrations: any[] = [];
+    let logins: any[] = [];
+    let activities: any[] = [];
+    let emailLogs: any[] = [];
+    let adminLogs: any[] = [];
+    let otpLogs: any[] = [];
+
+    try {
+      const results = await Promise.all([
+        User.find({}),
+        Registration.find({}),
+        LoginLog.find({}),
+        ActivityLog.find({}),
+        EmailLog.find({}),
+        AdminLog.find({}),
+        OTPLog.find({})
+      ]);
+      allUsers = results[0] || [];
+      allRegistrations = results[1] || [];
+      logins = results[2] || [];
+      activities = results[3] || [];
+      emailLogs = results[4] || [];
+      adminLogs = results[5] || [];
+      otpLogs = results[6] || [];
+    } catch (queryErr: any) {
+      console.warn('Excel DB query notice:', queryErr?.message || queryErr);
+    }
 
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'CPS PRIME MUN Secretariat';
