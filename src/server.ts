@@ -44,7 +44,7 @@ app.use('/uploads', express.static(uploadsDir));
 const buildPath = path.join(__dirname, '../../build');
 app.use(express.static(buildPath));
 
-// Middleware to ensure DB connection attempt is completed before handling API requests
+// Middleware to ensure DB connection attempt is initiated before handling API requests
 // and disable stale 304 Caching for live API responses
 app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -52,11 +52,10 @@ app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Expires', '0');
   try {
     await connectDB();
-    next();
   } catch (dbErr: any) {
-    console.error('Database connection error on API request:', dbErr?.message || dbErr);
-    res.status(503).json({ message: 'Database connection failed. Please check backend environment variables and MongoDB network access.' });
+    console.warn('MongoDB connection notice on API request:', dbErr?.message || dbErr);
   }
+  next();
 });
 
 // API Routes
