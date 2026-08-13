@@ -19,10 +19,8 @@ const EmailLogSchema = new Schema<IEmailLog>(
   { timestamps: true }
 );
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<IEmailLog>('EmailLog', EmailLogSchema);
-const MockModel = createMockModel('EmailLog');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('EmailLog', MongooseModel);
 export default exportModel;
