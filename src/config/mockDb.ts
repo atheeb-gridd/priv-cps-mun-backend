@@ -433,14 +433,14 @@ export function createHybridModel(name: string, mongooseModel: any) {
   }
 
   function ModelConstructor(this: any, data: any) {
-    const isConnected = mongoose.connection.readyState === 1;
+    const isConnected = mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2;
     const ActiveModel = isConnected ? mongooseModel : mockModel;
     return new ActiveModel(data);
   }
 
   return new Proxy(ModelConstructor, {
     get(target: any, prop: string | symbol) {
-      const isConnected = mongoose.connection.readyState === 1;
+      const isConnected = mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2;
       const activeModel = isConnected ? mongooseModel : mockModel;
       const val = activeModel[prop];
       if (typeof val === 'function') {
@@ -449,7 +449,7 @@ export function createHybridModel(name: string, mongooseModel: any) {
       return val;
     },
     construct(target, args) {
-      const isConnected = mongoose.connection.readyState === 1;
+      const isConnected = mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2;
       const ActiveModel = isConnected ? mongooseModel : mockModel;
       return new ActiveModel(...args);
     }
