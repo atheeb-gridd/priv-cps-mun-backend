@@ -417,7 +417,7 @@ export const getAllRegistrations = async (req: AuthenticatedRequest, res: Respon
       return res.status(403).json({ message: 'Forbidden. Admin access required.' });
     }
 
-    const registrations = await Registration.find().populate('user', 'fullName email userId accountId');
+    const registrations = await Registration.find().populate('user', 'fullName email userId accountId').lean();
     return res.status(200).json({ registrations });
   } catch (error) {
     console.error('Get all registrations error:', error);
@@ -755,7 +755,7 @@ export const getSeatCounts = async (req: any, res: Response) => {
       return res.status(200).json({ counts: seatCountsCache.counts, cached: true });
     }
 
-    const registrations = await Registration.find({}, { registrationType: 1, allocatedCommittee: 1, details: 1 });
+    const registrations = await Registration.find({}, { registrationType: 1, allocatedCommittee: 1, details: 1 }).lean();
     const counts: Record<string, number> = {};
 
     const increment = (rawComm: string) => {
@@ -1572,8 +1572,8 @@ export const getUserCredentials = async (req: AuthenticatedRequest, res: Respons
       return res.status(403).json({ message: 'Forbidden. Admin access required.' });
     }
 
-    const rawUsers = await User.find().select('_id fullName email plainPassword role status createdAt updatedAt').sort({ createdAt: -1 });
-    const rawRegistrations = await Registration.find().sort({ createdAt: -1 });
+    const rawUsers = await User.find().select('_id fullName email plainPassword role status createdAt updatedAt').sort({ createdAt: -1 }).lean();
+    const rawRegistrations = await Registration.find().sort({ createdAt: -1 }).lean();
 
     const seenEmails = new Set<string>();
     const users: any[] = [];
