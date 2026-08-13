@@ -44,13 +44,11 @@ app.use('/uploads', express.static(uploadsDir));
 const buildPath = path.join(__dirname, '../../build');
 app.use(express.static(buildPath));
 
-// Middleware to ensure DB connection is attempted before processing API requests
-app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await connectDB();
-  } catch (dbErr: any) {
+// Non-blocking middleware to ensure DB connection attempt is initiated without holding requests
+app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+  connectDB().catch((dbErr: any) => {
     console.error('Database connection warning on API request:', dbErr?.message || dbErr);
-  }
+  });
   next();
 });
 
