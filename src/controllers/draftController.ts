@@ -31,11 +31,30 @@ export const saveDraft = async (req: AuthenticatedRequest, res: Response) => {
       draftStatus: 'IN_PROGRESS'
     });
 
+    const cleanFormData = { ...(formData || {}) };
+    delete cleanFormData.docStudentIdFile;
+    delete cleanFormData.docPhotoFile;
+    delete cleanFormData.docStudentIdBase64;
+    delete cleanFormData.docPhotoBase64;
+    delete cleanFormData.docAadharBase64;
+
+    if (Array.isArray(cleanFormData.delegates)) {
+      cleanFormData.delegates = cleanFormData.delegates.map((d: any) => {
+        const cD = { ...d };
+        delete cD.docStudentIdFile;
+        delete cD.docPhotoFile;
+        delete cD.docStudentIdBase64;
+        delete cD.docPhotoBase64;
+        delete cD.docAadharBase64;
+        return cD;
+      });
+    }
+
     if (draft) {
       draft.currentStep = currentStep || draft.currentStep || 1;
       draft.regType = regType || draft.regType || 'individual';
       if (registrationId) draft.registrationId = registrationId;
-      draft.formData = { ...(draft.formData || {}), ...(formData || {}) };
+      draft.formData = { ...(draft.formData || {}), ...cleanFormData };
       draft.lastSavedAt = now;
       await draft.save();
     } else {
@@ -45,7 +64,7 @@ export const saveDraft = async (req: AuthenticatedRequest, res: Response) => {
         registrationId: registrationId || '',
         currentStep: currentStep || 1,
         regType: regType || 'individual',
-        formData: formData || {},
+        formData: cleanFormData,
         lastSavedAt: now,
         draftStatus: 'IN_PROGRESS'
       });
