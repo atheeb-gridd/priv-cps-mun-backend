@@ -433,7 +433,8 @@ export function createHybridModel(name: string, mongooseModel: any) {
   }
 
   function getActiveModel() {
-    return mongoose.connection.readyState === 1 ? mongooseModel : mockModel;
+    if (isMockDB()) return mockModel;
+    return mongooseModel;
   }
 
   function ModelConstructor(this: any, data: any) {
