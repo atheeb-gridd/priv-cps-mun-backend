@@ -21,10 +21,8 @@ const AdminLogSchema = new Schema<IAdminLog>(
   { timestamps: true }
 );
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<IAdminLog>('AdminLog', AdminLogSchema);
-const MockModel = createMockModel('AdminLog');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('AdminLog', MongooseModel);
 export default exportModel;
