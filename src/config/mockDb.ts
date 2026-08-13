@@ -160,12 +160,10 @@ export class MockModelClass {
     const doc = matched ? new this.DocClass(matched) : null;
 
     const promise: any = Promise.resolve(doc);
-    promise.select = function(fields: string) {
-      return promise;
-    };
-    promise.lean = function() {
-      return promise;
-    };
+    promise.select = function(fields: string) { return promise; };
+    promise.lean = function() { return promise; };
+    promise.sort = function(sortObj: any) { return promise; };
+    promise.limit = function(limitNum: number) { return promise; };
     promise.populate = function(path: string, selectFields?: string) {
       if (doc && path === 'user') {
         const users = db['users'] || [];
@@ -186,10 +184,12 @@ export class MockModelClass {
     let docs = matched.map((item: any) => new this.DocClass(item));
 
     const promise: any = Promise.resolve(docs);
-    promise.select = function(fields: string) {
-      return promise;
-    };
-    promise.lean = function() {
+    promise.select = function(fields: string) { return promise; };
+    promise.lean = function() { return promise; };
+    promise.limit = function(limitNum: number) {
+      if (typeof limitNum === 'number' && limitNum > 0) {
+        docs = docs.slice(0, limitNum);
+      }
       return promise;
     };
     promise.sort = function(sortObj: any) {
