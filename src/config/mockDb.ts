@@ -432,25 +432,48 @@ export function createHybridModel(name: string, mongooseModel: any) {
     return mockModel;
   }
 
+  function getActiveModel() {
+    return mongoose.connection.readyState === 1 ? mongooseModel : mockModel;
+  }
+
   function ModelConstructor(this: any, data: any) {
-    const isConnected = mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2;
-    const ActiveModel = isConnected ? mongooseModel : mockModel;
+    const ActiveModel = getActiveModel();
     return new ActiveModel(data);
   }
 
   return new Proxy(ModelConstructor, {
     get(target: any, prop: string | symbol) {
-      const isConnected = mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2;
-      const activeModel = isConnected ? mongooseModel : mockModel;
+      const activeModel = getActiveModel();
       const val = activeModel[prop];
       if (typeof val === 'function') {
-        return val.bind(activeModel);
+        return function(...args: any[]) {
+          try {
+            const result = val.apply(activeModel, args);
+            if (result && typeof result.catch === 'function') {
+              return result.catch((err: any) => {
+                console.error(`HybridModel [${name}.${String(prop)}] query error:`, err?.message || err);
+                const fallbackVal = mockModel[prop];
+                if (typeof fallbackVal === 'function') {
+                  return fallbackVal.apply(mockModel, args);
+                }
+                return Promise.resolve(null);
+              });
+            }
+            return result;
+          } catch (err: any) {
+            console.error(`HybridModel [${name}.${String(prop)}] call error:`, err?.message || err);
+            const fallbackVal = mockModel[prop];
+            if (typeof fallbackVal === 'function') {
+              return fallbackVal.apply(mockModel, args);
+            }
+            return null;
+          }
+        };
       }
       return val;
     },
     construct(target, args) {
-      const isConnected = mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2;
-      const ActiveModel = isConnected ? mongooseModel : mockModel;
+      const ActiveModel = getActiveModel();
       return new ActiveModel(...args);
     }
   }) as any;
