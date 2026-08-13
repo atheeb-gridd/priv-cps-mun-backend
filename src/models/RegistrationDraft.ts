@@ -58,8 +58,8 @@ const RegistrationDraftSchema = new Schema<IRegistrationDraft>(
   }
 );
 
-const MongooseModel = model<IRegistrationDraft>('RegistrationDraft', RegistrationDraftSchema, 'registrationDrafts');
-const MockModel = createMockModel('RegistrationDraft');
+import { createHybridModel } from '../config/mockDb';
 
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const MongooseModel = model<IRegistrationDraft>('RegistrationDraft', RegistrationDraftSchema, 'registrationDrafts');
+const exportModel = createHybridModel('RegistrationDraft', MongooseModel);
 export default exportModel;
