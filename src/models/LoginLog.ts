@@ -33,10 +33,8 @@ const LoginLogSchema = new Schema<ILoginLog>(
   { timestamps: true }
 );
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<ILoginLog>('LoginLog', LoginLogSchema);
-const MockModel = createMockModel('LoginLog');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('LoginLog', MongooseModel);
 export default exportModel;
