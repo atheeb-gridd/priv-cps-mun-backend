@@ -68,19 +68,22 @@ const connectDB = async (): Promise<void> => {
   let connString = (process.env.MONGODB_URI || '').trim().replace(/^["']|["']$/g, '');
   if (connString.startsWith('mongodb+srv://') || connString.startsWith('mongodb://')) {
     try {
-      const protocol = connString.startsWith('mongodb+srv://') ? 'mongodb+srv://' : 'mongodb://';
-      const rest = connString.slice(protocol.length);
-      const lastAtIndex = rest.lastIndexOf('@');
-      if (lastAtIndex !== -1) {
-        const userPassPart = rest.slice(0, lastAtIndex);
-        const hostAndParams = rest.slice(lastAtIndex + 1);
-        const firstColonIndex = userPassPart.indexOf(':');
-        if (firstColonIndex !== -1) {
-          const user = userPassPart.slice(0, firstColonIndex);
-          const rawPass = userPassPart.slice(firstColonIndex + 1);
-          const decodedPass = decodeURIComponent(rawPass);
-          const encodedPass = encodeURIComponent(decodedPass);
-          connString = `${protocol}${user}:${encodedPass}@${hostAndParams}`;
+      const scheme = connString.startsWith('mongodb+srv://') ? 'mongodb+srv://' : 'mongodb://';
+      const rest = connString.slice(scheme.length);
+      const slashOrQuestion = rest.search(/[\/\?]/);
+      const hostPart = slashOrQuestion !== -1 ? rest.slice(0, slashOrQuestion) : rest;
+      const pathPart = slashOrQuestion !== -1 ? rest.slice(slashOrQuestion) : '';
+      
+      const lastAtInHost = hostPart.lastIndexOf('@');
+      if (lastAtInHost !== -1) {
+        const userPass = hostPart.slice(0, lastAtInHost);
+        const host = hostPart.slice(lastAtInHost + 1);
+        const colonIdx = userPass.indexOf(':');
+        if (colonIdx !== -1) {
+          const user = userPass.slice(0, colonIdx);
+          const rawPass = userPass.slice(colonIdx + 1);
+          const encodedPass = encodeURIComponent(decodeURIComponent(rawPass));
+          connString = `${scheme}${user}:${encodedPass}@${host}${pathPart}`;
         }
       }
     } catch (parseErr) {
@@ -93,9 +96,9 @@ const connectDB = async (): Promise<void> => {
   cachedPromise = mongoose
     .connect(connString, {
       dbName: process.env.DB_NAME || 'cpsprimemun',
-      serverSelectionTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000,
+      connectTimeoutMS: 5000,
     })
     .then(async (conn) => {
       console.log(`MongoDB Connected: ${conn.connection.host}`);
