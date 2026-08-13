@@ -955,6 +955,12 @@ export const generateMasterExcel = async (): Promise<string> => {
     styleDataRows(wsMedical);
     autoFitColumns(wsMedical);
 
+    // Ensure directory exists
+    const dirPath = path.dirname(EXCEL_FILE_PATH);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
     // Write file to filesystem
     await workbook.xlsx.writeFile(EXCEL_FILE_PATH);
     console.log('⚡ Master Excel file compiled successfully at:', EXCEL_FILE_PATH);
