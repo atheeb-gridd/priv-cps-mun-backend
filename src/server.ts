@@ -46,13 +46,15 @@ app.use(express.static(buildPath));
 
 // Non-blocking middleware to ensure DB connection attempt is initiated without holding requests
 // and disable stale 304 Caching for live API responses
-app.use('/api', (req: Request, res: Response, next: NextFunction) => {
+app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-  connectDB().catch((dbErr: any) => {
+  try {
+    await connectDB();
+  } catch (dbErr: any) {
     console.error('Database connection warning on API request:', dbErr?.message || dbErr);
-  });
+  }
   next();
 });
 
