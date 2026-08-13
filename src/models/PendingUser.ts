@@ -52,10 +52,8 @@ const PendingUserSchema = new Schema<IPendingUser>(
 // TTL index to automatically delete unverified signups
 PendingUserSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<IPendingUser>('PendingUser', PendingUserSchema);
-const MockModel = createMockModel('PendingUser');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('PendingUser', MongooseModel);
 export default exportModel;
