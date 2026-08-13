@@ -209,7 +209,8 @@ export const verifyEmail = async (req: Request, res: Response) => {
     }
 
     // Generate sequential user and account IDs robustly
-    const lastUser = await User.findOne({ userId: /^CPS-U-/ }).sort({ userId: -1 });
+    const recentUsers = await User.find({ userId: /^CPS-U-/ }).sort({ userId: -1 }).limit(1);
+    const lastUser = recentUsers && recentUsers.length > 0 ? recentUsers[0] : null;
     let nextNum = 10001;
     if (lastUser && lastUser.userId) {
       const match = lastUser.userId.match(/CPS-U-(\d+)/);
@@ -687,7 +688,8 @@ export const seedTestAccounts = async (req: Request, res: Response) => {
       }
 
       // Generate sequential ID
-      const lastUser = await User.findOne({ userId: /^CPS-U-/ }).sort({ userId: -1 });
+      const recentTestUsers = await User.find({ userId: /^CPS-U-/ }).sort({ userId: -1 }).limit(1);
+      const lastUser = recentTestUsers && recentTestUsers.length > 0 ? recentTestUsers[0] : null;
       let nextNum = 10001;
       if (lastUser && lastUser.userId) {
         const match = lastUser.userId.match(/CPS-U-(\d+)/);
