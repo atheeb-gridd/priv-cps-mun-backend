@@ -44,17 +44,14 @@ app.use('/uploads', express.static(uploadsDir));
 const buildPath = path.join(__dirname, '../../build');
 app.use(express.static(buildPath));
 
-// Middleware to ensure DB is connected before processing API requests (essential for Vercel serverless cold starts)
+// Middleware to ensure DB connection is attempted before processing API requests
 app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
   try {
     await connectDB();
-    next();
   } catch (dbErr: any) {
-    console.error('Database connection error on API request:', dbErr);
-    res.status(500).json({
-      message: dbErr.message || 'Database connection failure. Please check MONGODB_URI or Atlas network access.',
-    });
+    console.error('Database connection warning on API request:', dbErr?.message || dbErr);
   }
+  next();
 });
 
 // API Routes
