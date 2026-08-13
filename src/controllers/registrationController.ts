@@ -751,9 +751,6 @@ export const invalidateSeatCountsCache = () => {
 export const getSeatCounts = async (req: any, res: Response) => {
   try {
     const now = Date.now();
-    if (seatCountsCache && (now - seatCountsCache.timestamp < CACHE_TTL_MS)) {
-      return res.status(200).json({ counts: seatCountsCache.counts, cached: true });
-    }
 
     const registrations = await Registration.find({}, { registrationType: 1, allocatedCommittee: 1, details: 1 }).lean();
     const counts: Record<string, number> = {};
