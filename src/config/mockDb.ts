@@ -427,56 +427,9 @@ export function isMockDB(): boolean {
 import mongoose from 'mongoose';
 
 export function createHybridModel(name: string, mongooseModel: any) {
-  const mockModel = createMockModel(name);
   if (isMockDB()) {
-    return mockModel;
+    return createMockModel(name);
   }
-
-  function getActiveModel() {
-    if (isMockDB()) return mockModel;
-    return mongooseModel;
-  }
-
-  function ModelConstructor(this: any, data: any) {
-    const ActiveModel = getActiveModel();
-    return new ActiveModel(data);
-  }
-
-  return new Proxy(ModelConstructor, {
-    get(target: any, prop: string | symbol) {
-      const activeModel = getActiveModel();
-      const val = activeModel[prop];
-      if (typeof val === 'function') {
-        return function(...args: any[]) {
-          try {
-            const result = val.apply(activeModel, args);
-            if (result && typeof result.catch === 'function') {
-              return result.catch((err: any) => {
-                console.error(`HybridModel [${name}.${String(prop)}] query error:`, err?.message || err);
-                const fallbackVal = mockModel[prop];
-                if (typeof fallbackVal === 'function') {
-                  return fallbackVal.apply(mockModel, args);
-                }
-                return Promise.resolve(null);
-              });
-            }
-            return result;
-          } catch (err: any) {
-            console.error(`HybridModel [${name}.${String(prop)}] call error:`, err?.message || err);
-            const fallbackVal = mockModel[prop];
-            if (typeof fallbackVal === 'function') {
-              return fallbackVal.apply(mockModel, args);
-            }
-            return null;
-          }
-        };
-      }
-      return val;
-    },
-    construct(target, args) {
-      const ActiveModel = getActiveModel();
-      return new ActiveModel(...args);
-    }
-  }) as any;
+  return mongooseModel;
 }
 
