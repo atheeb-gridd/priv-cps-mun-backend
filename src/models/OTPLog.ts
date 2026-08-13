@@ -23,10 +23,8 @@ const OTPLogSchema = new Schema<IOTPLog>(
   { timestamps: true }
 );
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<IOTPLog>('OTPLog', OTPLogSchema);
-const MockModel = createMockModel('OTPLog');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('OTPLog', MongooseModel);
 export default exportModel;
