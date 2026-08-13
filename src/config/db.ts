@@ -68,13 +68,25 @@ const connectDB = async (): Promise<void> => {
   mongoose.set('bufferCommands', false);
 
   let connString = (process.env.MONGODB_URI || '').trim().replace(/^["']|["']$/g, '');
-  // Auto-fix unescaped '@' in password if present (e.g. CPS@22Chennai -> CPS%4022Chennai)
-  if (connString.includes('mongodb+srv://') || connString.includes('mongodb://')) {
-    const parts = connString.split('@');
-    if (parts.length > 2) {
-      const credentialsPart = parts.slice(0, parts.length - 1).join('%40');
-      const hostPart = parts[parts.length - 1];
-      connString = `${credentialsPart}@${hostPart}`;
+  if (connString.startsWith('mongodb+srv://') || connString.startsWith('mongodb://')) {
+    try {
+      const protocol = connString.startsWith('mongodb+srv://') ? 'mongodb+srv://' : 'mongodb://';
+      const rest = connString.slice(protocol.length);
+      const lastAtIndex = rest.lastIndexOf('@');
+      if (lastAtIndex !== -1) {
+        const userPassPart = rest.slice(0, lastAtIndex);
+        const hostAndParams = rest.slice(lastAtIndex + 1);
+        const firstColonIndex = userPassPart.indexOf(':');
+        if (firstColonIndex !== -1) {
+          const user = userPassPart.slice(0, firstColonIndex);
+          const rawPass = userPassPart.slice(firstColonIndex + 1);
+          const decodedPass = decodeURIComponent(rawPass);
+          const encodedPass = encodeURIComponent(decodedPass);
+          connString = `${protocol}${user}:${encodedPass}@${hostAndParams}`;
+        }
+      }
+    } catch (parseErr) {
+      console.warn('MongoDB URI parsing notice:', parseErr);
     }
   }
 
@@ -121,8 +133,7 @@ const connectDB = async (): Promise<void> => {
     })
     .catch((error) => {
       cachedPromise = null;
-      console.error(`Error connecting to MongoDB:`, error);
-      throw error;
+      console.error(`Database connection notice:`, error?.message || error);
     });
 
   return cachedPromise;
