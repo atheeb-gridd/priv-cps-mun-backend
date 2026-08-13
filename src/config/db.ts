@@ -92,6 +92,7 @@ const connectDB = async (): Promise<void> => {
   }
 
   console.log(`Connecting to MongoDB...`);
+  mongoose.set('bufferCommands', false);
 
   cachedPromise = mongoose
     .connect(connString, {
@@ -134,7 +135,8 @@ const connectDB = async (): Promise<void> => {
     })
     .catch((error) => {
       cachedPromise = null;
-      console.error(`Database connection notice:`, error?.message || error);
+      console.error(`Database connection error:`, error?.message || error);
+      throw error;
     });
 
   return cachedPromise;
