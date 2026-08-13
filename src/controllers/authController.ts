@@ -195,11 +195,17 @@ export const verifyEmail = async (req: Request, res: Response) => {
       const expiredPending = await PendingUser.findOne({ email: email.toLowerCase() });
       if (expiredPending) {
         if (expiredPending.expiresAt <= new Date()) {
-          return res.status(400).json({ message: 'Verification code expired.' });
+          return res.status(400).json({ message: 'Verification code expired. Please click "Resend OTP".' });
         }
-        return res.status(400).json({ message: 'Invalid verification code.' });
+        return res.status(400).json({ message: 'Invalid verification code. Please check the code sent to your email.' });
       }
-      return res.status(400).json({ message: 'No registration request found for this email.' });
+
+      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Your email is already verified! Please go back to Sign In.' });
+      }
+
+      return res.status(400).json({ message: 'No pending registration request found for this email. Please click "Go Back" and register again.' });
     }
 
     // Generate sequential user and account IDs robustly
