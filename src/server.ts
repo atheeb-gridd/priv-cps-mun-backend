@@ -1,102 +1,145 @@
-import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
+import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import connectDB from './config/db';
-import authRoutes from './routes/authRoutes';
-import registrationRoutes from './routes/registrationRoutes';
-import paymentRoutes from './routes/paymentRoutes';
+import { isMockDB } from './mockDb';
 
-import path from 'path';
+dotenv.config();
 
-dotenv.config({ path: path.join(__dirname, '../.env') });
+let cachedPromise: Promise<void> | null = null;
 
-const app = express();
-app.set('trust proxy', 1);
-const PORT = process.env.PORT || 5001;
+const connectDB = async (): Promise<void> => {
+  if (isMockDB()) {
+    console.log('⚡ Mock Database Mode Active. Using zero-dependency JSON file-based database (db.json)');
 
-// Connect to MongoDB Database
-connectDB();
+    const fs = require('fs');
+    const path = require('path');
+    const bcrypt = require('bcryptjs');
+    const dbFile = process.env.VERCEL
+      ? '/tmp/db.json'
+      : path.join(__dirname, '../../db.json');
 
-// Global Middlewares
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-  })
-);
-app.use(
-  cors({
-    origin: true, // Reflect request origin to satisfy credentials requirement
-    credentials: true,
-  })
-);
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// Static file serving (for signature images, uploads, etc.)
-// On Vercel the filesystem is read-only except /tmp, so runtime uploads land there
-const uploadsDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '../uploads');
-app.use(express.static(path.join(__dirname, '../public')));
-app.use('/uploads', express.static(uploadsDir));
-
-// Serve React production build
-const buildPath = path.join(__dirname, '../../build');
-app.use(express.static(buildPath));
-
-// Middleware to ensure DB connection attempt is completed before handling API requests
-// and disable stale 304 Caching for live API responses
-app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  try {
-    await connectDB();
-    next();
-  } catch (dbErr: any) {
-    console.error('Database connection error on API request:', dbErr?.message || dbErr);
-    res.status(503).json({ message: 'Database connection failed. Please check backend environment variables and MongoDB network access.' });
-  }
-});
-
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/registration', registrationRoutes);
-app.use('/api/payment', paymentRoutes);
-
-// Health Check Route
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'OK', message: 'CPS PRIME MUN Backend is running.' });
-});
-
-// React SPA Routing fallback (serve index.html for non-API routes)
-app.get('*', (req: Request, res: Response, next: NextFunction) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/health') || req.path.startsWith('/uploads')) {
-    return next();
-  }
-  const indexPath = path.join(buildPath, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err && !res.headersSent) {
-      console.error('Error serving index.html:', err);
-      res.status(404).send('Page not found');
+    let db: any = { users: [], registrations: [], pendingusers: [], otps: [] };
+    if (fs.existsSync(dbFile)) {
+      try {
+        db = JSON.parse(fs.readFileSync(dbFile, 'utf-8'));
+      } catch (e) {
+        // ignore
+      }
     }
-  });
-});
 
-// Global Error Handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Unhandled Server Error:', err);
-  res.status(500).json({ message: err.message || 'An unhandled server error occurred.' });
-});
+    if (!db.users) db.users = [];
+    const adminExists = db.users.some((u: any) => u.email === 'admin.secretariat@cpsprimemun.org');
+    if (!adminExists) {
+      console.log('🌱 Seeding Admin User: admin.secretariat@cpsprimemun.org');
+      const salt = bcrypt.genSaltSync(12);
+      const adminHash = bcrypt.hashSync('CpsMun5.O#Secr3tSecretariat@9843$Xk9!', salt);
+      db.users.push({
+        userId: 'CPS-U-10001',
+        accountId: 'CPS-A-10001',
+        fullName: 'CPS Admin Secretariat',
+        username: 'cps_super_admin',
+        email: 'admin.secretariat@cpsprimemun.org',
+        passwordHash: adminHash,
+        plainPassword: 'CpsMun5.O#Secr3tSecretariat@9843$Xk9!',
+        emailVerified: true,
+        registrationCompleted: true,
+        role: 'Admin',
+        status: 'Active',
+        _collectionName: 'users',
+        _id: 'mock_admin_user',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      fs.writeFileSync(dbFile, JSON.stringify(db, null, 2), 'utf-8');
+      console.log('🌱 Admin user seeded successfully.');
+    }
 
-// Start Express Server only when NOT running on Vercel.
-// On Vercel, the serverless runtime injects requests directly into the exported app —
-// calling app.listen() would crash the function.
-if (!process.env.VERCEL) {
-  app.listen(Number(PORT), () => {
-    console.log(`CPS PRIME MUN Server listening on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
-}
+    return;
+  }
 
-export default app;
+  // Reuse existing connection if connected
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+
+  if (cachedPromise) {
+    return cachedPromise;
+  }
+
+  let connString = (process.env.MONGODB_URI || '').trim().replace(/^["']|["']$/g, '');
+  if (connString.startsWith('mongodb+srv://') || connString.startsWith('mongodb://')) {
+    try {
+      const scheme = connString.startsWith('mongodb+srv://') ? 'mongodb+srv://' : 'mongodb://';
+      const rest = connString.slice(scheme.length);
+      const slashOrQuestion = rest.search(/[\/\?]/);
+      const hostPart = slashOrQuestion !== -1 ? rest.slice(0, slashOrQuestion) : rest;
+      const pathPart = slashOrQuestion !== -1 ? rest.slice(slashOrQuestion) : '';
+      
+      const lastAtInHost = hostPart.lastIndexOf('@');
+      if (lastAtInHost !== -1) {
+        const userPass = hostPart.slice(0, lastAtInHost);
+        const host = hostPart.slice(lastAtInHost + 1);
+        const colonIdx = userPass.indexOf(':');
+        if (colonIdx !== -1) {
+          const user = userPass.slice(0, colonIdx);
+          const rawPass = userPass.slice(colonIdx + 1);
+          const encodedPass = encodeURIComponent(decodeURIComponent(rawPass));
+          connString = `${scheme}${user}:${encodedPass}@${host}${pathPart}`;
+        }
+      }
+    } catch (parseErr) {
+      console.warn('MongoDB URI parsing notice:', parseErr);
+    }
+  }
+
+  console.log(`Connecting to MongoDB...`);
+  mongoose.set('bufferCommands', false);
+
+  cachedPromise = mongoose
+    .connect(connString, {
+      dbName: process.env.DB_NAME || 'cpsprimemun',
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 5000,
+    })
+    .then(async (conn) => {
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+      try {
+        if (conn.connection.db) {
+          const adminCol = conn.connection.db.collection('users');
+          const adminUser = await adminCol.findOne({ email: 'admin.secretariat@cpsprimemun.org' });
+          if (!adminUser) {
+            console.log('🌱 Seeding Admin User in MongoDB...');
+            const bcrypt = require('bcryptjs');
+            const salt = bcrypt.genSaltSync(12);
+            const adminHash = bcrypt.hashSync('CpsMun5.O#Secr3tSecretariat@9843$Xk9!', salt);
+            await adminCol.insertOne({
+              userId: 'CPS-U-10001',
+              accountId: 'CPS-A-10001',
+              fullName: 'CPS Admin Secretariat',
+              username: 'cps_super_admin',
+              email: 'admin.secretariat@cpsprimemun.org',
+              passwordHash: adminHash,
+              emailVerified: true,
+              registrationCompleted: true,
+              role: 'Admin',
+              status: 'Active',
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            console.log('🌱 Admin user seeded successfully in MongoDB.');
+          }
+        }
+      } catch (dbErr) {
+        console.error('Failed to seed admin in MongoDB:', dbErr);
+      }
+    })
+    .catch((error) => {
+      cachedPromise = null;
+      console.error(`Database connection error:`, error?.message || error);
+      throw error;
+    });
+
+  return cachedPromise;
+};
+
+export default connectDB;
