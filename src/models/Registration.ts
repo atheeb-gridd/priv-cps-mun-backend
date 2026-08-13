@@ -115,6 +115,7 @@ const RegistrationSchema = new Schema<IRegistration>(
   },
   {
     timestamps: true,
+    bufferCommands: false,
   }
 );
 
