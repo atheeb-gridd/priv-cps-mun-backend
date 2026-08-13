@@ -163,6 +163,9 @@ export class MockModelClass {
     promise.select = function(fields: string) {
       return promise;
     };
+    promise.lean = function() {
+      return promise;
+    };
     promise.populate = function(path: string, selectFields?: string) {
       if (doc && path === 'user') {
         const users = db['users'] || [];
@@ -184,6 +187,9 @@ export class MockModelClass {
 
     const promise: any = Promise.resolve(docs);
     promise.select = function(fields: string) {
+      return promise;
+    };
+    promise.lean = function() {
       return promise;
     };
     promise.sort = function(sortObj: any) {
@@ -225,6 +231,9 @@ export class MockModelClass {
 
     const promise: any = Promise.resolve(doc);
     promise.select = function(fields: string) {
+      return promise;
+    };
+    promise.lean = function() {
       return promise;
     };
     promise.populate = function(path: string, selectFields?: string) {
