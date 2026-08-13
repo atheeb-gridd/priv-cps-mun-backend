@@ -417,7 +417,7 @@ export const getAllRegistrations = async (req: AuthenticatedRequest, res: Respon
       return res.status(403).json({ message: 'Forbidden. Admin access required.' });
     }
 
-    const registrations = await Registration.find().populate('user', 'fullName email userId accountId').lean();
+    const registrations = await Registration.find().lean();
     return res.status(200).json({ registrations });
   } catch (error) {
     console.error('Get all registrations error:', error);
