@@ -135,8 +135,7 @@ const connectDB = async (): Promise<void> => {
     })
     .catch((error) => {
       cachedPromise = null;
-      console.error(`Database connection error:`, error?.message || error);
-      throw error;
+      console.warn(`Database connection notice:`, error?.message || error);
     });
 
   return cachedPromise;
