@@ -118,10 +118,8 @@ const RegistrationSchema = new Schema<IRegistration>(
   }
 );
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<IRegistration>('Registration', RegistrationSchema);
-const MockModel = createMockModel('Registration');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('Registration', MongooseModel);
 export default exportModel;
