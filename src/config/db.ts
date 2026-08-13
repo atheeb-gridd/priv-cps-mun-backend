@@ -65,8 +65,6 @@ const connectDB = async (): Promise<void> => {
     return cachedPromise;
   }
 
-  mongoose.set('bufferCommands', false);
-
   let connString = (process.env.MONGODB_URI || '').trim().replace(/^["']|["']$/g, '');
   if (connString.startsWith('mongodb+srv://') || connString.startsWith('mongodb://')) {
     try {
