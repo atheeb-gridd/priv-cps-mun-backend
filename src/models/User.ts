@@ -89,10 +89,8 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<IUser>('User', UserSchema);
-const MockModel = createMockModel('User');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('User', MongooseModel);
 export default exportModel;
