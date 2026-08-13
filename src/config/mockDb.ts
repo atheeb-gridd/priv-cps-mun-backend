@@ -415,3 +415,35 @@ export function isMockDB(): boolean {
   return false;
 }
 
+import mongoose from 'mongoose';
+
+export function createHybridModel(name: string, mongooseModel: any) {
+  const mockModel = createMockModel(name);
+  if (isMockDB()) {
+    return mockModel;
+  }
+
+  function ModelConstructor(this: any, data: any) {
+    const isConnected = mongoose.connection.readyState === 1;
+    const ActiveModel = isConnected ? mongooseModel : mockModel;
+    return new ActiveModel(data);
+  }
+
+  return new Proxy(ModelConstructor, {
+    get(target: any, prop: string | symbol) {
+      const isConnected = mongoose.connection.readyState === 1;
+      const activeModel = isConnected ? mongooseModel : mockModel;
+      const val = activeModel[prop];
+      if (typeof val === 'function') {
+        return val.bind(activeModel);
+      }
+      return val;
+    },
+    construct(target, args) {
+      const isConnected = mongoose.connection.readyState === 1;
+      const ActiveModel = isConnected ? mongooseModel : mockModel;
+      return new ActiveModel(...args);
+    }
+  }) as any;
+}
+
