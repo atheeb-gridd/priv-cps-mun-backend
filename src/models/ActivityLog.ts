@@ -25,10 +25,8 @@ const ActivityLogSchema = new Schema<IActivityLog>(
   { timestamps: true }
 );
 
-import { createMockModel, isMockDB } from '../config/mockDb';
+import { createHybridModel } from '../config/mockDb';
 
 const MongooseModel = model<IActivityLog>('ActivityLog', ActivityLogSchema);
-const MockModel = createMockModel('ActivityLog');
-
-const exportModel = isMockDB() ? MockModel : MongooseModel;
+const exportModel = createHybridModel('ActivityLog', MongooseModel);
 export default exportModel;
