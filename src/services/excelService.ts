@@ -177,7 +177,12 @@ export const generateMasterExcel = async (): Promise<string> => {
     try {
       const results = await Promise.all([
         User.find({}),
-        Registration.find({}),
+        Registration.find({}, {
+          'details.docStudentIdFile': 0,
+          'details.docPhotoFile': 0,
+          'details.docAadharFile': 0,
+          'details.schoolAuthLetterFile': 0
+        }),
         LoginLog.find({}),
         ActivityLog.find({}),
         EmailLog.find({}),
