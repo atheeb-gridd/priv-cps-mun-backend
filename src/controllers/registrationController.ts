@@ -417,7 +417,15 @@ export const getAllRegistrations = async (req: AuthenticatedRequest, res: Respon
       return res.status(403).json({ message: 'Forbidden. Admin access required.' });
     }
 
-    const registrations = await Registration.find().lean();
+    const registrations = await Registration.find(
+      {},
+      {
+        'details.docStudentIdFile': 0,
+        'details.docPhotoFile': 0,
+        'details.docAadharFile': 0,
+        'details.schoolAuthLetterFile': 0,
+      }
+    ).sort({ createdAt: -1 }).lean();
 
     return res.status(200).json({ registrations: registrations || [] });
   } catch (error) {
