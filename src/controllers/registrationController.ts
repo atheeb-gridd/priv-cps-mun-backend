@@ -417,9 +417,7 @@ export const getAllRegistrations = async (req: AuthenticatedRequest, res: Respon
       return res.status(403).json({ message: 'Forbidden. Admin access required.' });
     }
 
-    const queryPromise = Registration.find().lean();
-    const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 3500));
-    const registrations = await Promise.race([queryPromise, timeoutPromise]);
+    const registrations = await Registration.find().lean();
 
     return res.status(200).json({ registrations: registrations || [] });
   } catch (error) {
@@ -755,9 +753,7 @@ export const getSeatCounts = async (req: any, res: Response) => {
   try {
     const now = Date.now();
 
-    const queryPromise = Registration.find({}, { registrationType: 1, allocatedCommittee: 1, details: 1 }).lean();
-    const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 3500));
-    const registrations = (await Promise.race([queryPromise, timeoutPromise])) || [];
+    const registrations = (await Registration.find({}, { registrationType: 1, allocatedCommittee: 1, details: 1 }).lean()) || [];
     const counts: Record<string, number> = {};
 
     const increment = (rawComm: string) => {
@@ -1574,17 +1570,9 @@ export const getUserCredentials = async (req: AuthenticatedRequest, res: Respons
       return res.status(403).json({ message: 'Forbidden. Admin access required.' });
     }
 
-    const timeoutPromise = new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 3500));
+    const rawUsers = (await User.find().select('_id fullName email plainPassword role status createdAt updatedAt').sort({ createdAt: -1 }).lean()) || [];
 
-    const rawUsers = (await Promise.race([
-      User.find().select('_id fullName email plainPassword role status createdAt updatedAt').sort({ createdAt: -1 }).lean(),
-      timeoutPromise
-    ])) || [];
-
-    const rawRegistrations = (await Promise.race([
-      Registration.find().sort({ createdAt: -1 }).lean(),
-      timeoutPromise
-    ])) || [];
+    const rawRegistrations = (await Registration.find().sort({ createdAt: -1 }).lean()) || [];
 
     const seenEmails = new Set<string>();
     const users: any[] = [];
