@@ -761,7 +761,23 @@ export const getSeatCounts = async (req: any, res: Response) => {
   try {
     const now = Date.now();
 
-    const registrations = (await Registration.find({}, { registrationType: 1, allocatedCommittee: 1, details: 1 }).lean()) || [];
+    const registrations = (await Registration.find(
+      {},
+      {
+        registrationType: 1,
+        allocatedCommittee: 1,
+        'details.allocatedCommittee': 1,
+        'details.selectedCommittee': 1,
+        'details.committee': 1,
+        'details.seatStatus': 1,
+        'details.delegates.allocatedCommittee': 1,
+        'details.delegates.selectedCommittee': 1,
+        'details.delegates.seatStatus': 1,
+        'details.delegatesList.allocatedCommittee': 1,
+        'details.delegatesList.selectedCommittee': 1,
+        'details.delegatesList.seatStatus': 1,
+      }
+    ).lean()) || [];
     const counts: Record<string, number> = {};
 
     const increment = (rawComm: string) => {
@@ -805,15 +821,22 @@ export const getSeatCounts = async (req: any, res: Response) => {
 
 export const getCommitteeAllocations = async (req: any, res: Response) => {
   try {
-    const registrations = await Registration.find(
+    const registrations = (await Registration.find(
       {},
       {
         registrationType: 1,
         allocatedCommittee: 1,
         allocatedCountry: 1,
-        details: 1
+        'details.fullName': 1,
+        'details.schoolName': 1,
+        'details.delegates.allocatedCommittee': 1,
+        'details.delegates.allocatedCountry': 1,
+        'details.delegates.name': 1,
+        'details.delegatesList.allocatedCommittee': 1,
+        'details.delegatesList.allocatedCountry': 1,
+        'details.delegatesList.name': 1,
       }
-    );
+    ).lean()) || [];
 
     const allocations: Array<{
       committee: string;
@@ -1580,7 +1603,18 @@ export const getUserCredentials = async (req: AuthenticatedRequest, res: Respons
 
     const rawUsers = (await User.find().select('_id fullName email plainPassword role status createdAt updatedAt').sort({ createdAt: -1 }).lean()) || [];
 
-    const rawRegistrations = (await Registration.find().sort({ createdAt: -1 }).lean()) || [];
+    const rawRegistrations = (await Registration.find(
+      {},
+      {
+        registrationType: 1,
+        registeredByUser: 1,
+        'details.fullName': 1,
+        'details.email': 1,
+        'details.seatStatus': 1,
+        createdAt: 1,
+        updatedAt: 1
+      }
+    ).sort({ createdAt: -1 }).lean()) || [];
 
     const seenEmails = new Set<string>();
     const users: any[] = [];
