@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import ExcelJS from 'exceljs';
+import type ExcelJS from 'exceljs';
 import User from '../models/User';
 import Registration from '../models/Registration';
 import LoginLog from '../models/LoginLog';
@@ -200,7 +200,8 @@ export const generateMasterExcel = async (): Promise<string> => {
       console.warn('Excel DB query notice:', queryErr?.message || queryErr);
     }
 
-    const workbook = new ExcelJS.Workbook();
+    const Excel = require('exceljs');
+    const workbook: ExcelJS.Workbook = new Excel.Workbook();
     workbook.creator = 'CPS PRIME MUN Secretariat';
     workbook.lastModifiedBy = 'Admin System';
     workbook.created = new Date();
